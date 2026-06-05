@@ -1,0 +1,150 @@
+[gd_scene load_steps=4 format=3 uid="uid://c0m3n7h4v3n0t3d"]
+
+[ext_resource type="Script" path="res://scripts/systems/world_generation/chunk_manager.gd" id="1_j4k3r"]
+[ext_resource type="Script" path="res://scripts/systems/player/player_controller.gd" id="2_a7b8c"]
+[ext_resource type="PackedScene" uid="uid://d0e1f2g3h4i5j6k7l8m9n0o1p2q3r4s5" path="res://scenes/player/player.tscn" id="3_d9e0f"]
+
+[node name="GameWorld" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, 0, 0, 0)
+
+[node name="ChunkManager" type="Node" parent="."]
+script = ExtResource("1_j4k3r")
+
+[node name="Player" parent="." instance=ExtResource("3_d9e0f")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 65, 0) # Spawn player above ground
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Crosshair" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 8
+ancho_left = 0.5
+ancho_top = 0.5
+ancho_right = 0.5
+ancho_bottom = 0.5
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/Crosshair"]
+layout_mode = 0
+offset_left = 7.0
+offset_top = 0.0
+offset_right = 9.0
+offset_bottom = 16.0
+color = Color(1, 1, 1, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="UI/Crosshair"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 7.0
+offset_right = 16.0
+offset_bottom = 9.0
+color = Color(1, 1, 1, 1)
+
+[node name="HotbarUI" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Panel" type="Panel" parent="UI/HotbarUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GridContainer" type="GridContainer" parent="UI/HotbarUI/Panel"]
+layout_mode = 1
+anchors_preset = 8
+ancho_left = 0.5
+ancho_top = 0.5
+ancho_right = 0.5
+ancho_bottom = 0.5
+offset_left = -140.0
+offset_top = -16.0
+offset_right = 140.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 9
+
+[node name="InventoryUI" type="Control" parent="UI"]
+visible = false # Hidden by default
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UI/InventoryUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GridContainer" type="GridContainer" parent="UI/InventoryUI/Panel"]
+layout_mode = 1
+anchors_preset = 8
+ancho_left = 0.5
+ancho_top = 0.5
+ancho_right = 0.5
+ancho_bottom = 0.5
+offset_left = -180.0
+offset_top = -120.0
+offset_right = 180.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 9
+
+[node name="DebugUI" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_bottom = 100.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="LabelFPS" type="Label" parent="UI/DebugUI"]
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 23.0
+text = "FPS: 60"
+
+[node name="LabelPos" type="Label" parent="UI/DebugUI"]
+layout_mode = 0
+offset_top = 25.0
+offset_right = 150.0
+offset_bottom = 48.0
+text = "Pos: (0,0,0)"
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
