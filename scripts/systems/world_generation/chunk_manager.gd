@@ -20,13 +20,17 @@ func _ready():
     add_child(world_generator)
     add_child(voxel_block_system)
 
-    # Connect to player position updates (assuming GameManager handles player spawning and updates)
-    if GameManager.get_player_node():
-        _on_player_position_updated(GameManager.get_player_node().global_transform.origin)
-    GameManager.player_spawned.connect(_on_player_spawned)
+    # Connect to player position updates from GameManager once it's ready
+    if GameManager:
+        GameManager.player_spawned.connect(_on_player_spawned)
+        # If player is already spawned (e.g., scene reloaded), get its position
+        if GameManager.get_player_node():
+            _on_player_position_updated(GameManager.get_player_node().global_transform.origin)
 
 func _on_player_spawned(player_node):
-    player_node.position_changed.connect(_on_player_position_updated) # Assuming player has a position_changed signal
+    # Ensure player_node has a signal for position changes
+    if player_node.has_signal("position_changed"):
+        player_node.position_changed.connect(_on_player_position_updated)
     _on_player_position_updated(player_node.global_transform.origin)
 
 func _on_player_position_updated(new_player_world_pos: Vector3):

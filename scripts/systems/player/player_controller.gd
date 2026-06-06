@@ -47,8 +47,8 @@ func _handle_movement(delta):
         velocity.x = direction.x * current_speed
         velocity.z = direction.z * current_speed
     else:
-        velocity.x = move_and_slide().x
-        velocity.z = move_and_slide().z
+        velocity.x = move_toward(velocity.x, 0, current_speed) # Sửa lỗi: move_and_slide() không trả về Vector3
+        velocity.z = move_toward(velocity.z, 0, current_speed) # Sửa lỗi: move_and_slide() không trả về Vector3
 
     move_and_slide()
 
@@ -76,13 +76,15 @@ func _on_interact():
         var block_pos = Vector3(floor(hit_pos.x), floor(hit_pos.y), floor(hit_pos.z))
 
         if Input.is_action_just_pressed("break_block"):
-            # Assuming ChunkManager is a singleton or accessible
+            # Gọi ChunkManager thông qua singleton
             if ChunkManager:
                 ChunkManager.set_block(block_pos, VoxelBlockSystem.BlockID.AIR)
         elif Input.is_action_just_pressed("place_block"):
             var place_pos = block_pos + hit_normal
-            # Assuming current_item_in_hand gives a block ID
-            var block_to_place = VoxelBlockSystem.BlockID.DIRT # Placeholder
+            # Lấy item đang cầm từ InventoryManager
+            var block_to_place = InventoryManager.get_selected_hotbar_item().item_id
+            if block_to_place == VoxelBlockSystem.BlockID.AIR:
+                block_to_place = VoxelBlockSystem.BlockID.STONE # Mặc định là đá nếu không có gì
             if ChunkManager:
                 ChunkManager.set_block(place_pos, block_to_place)
 

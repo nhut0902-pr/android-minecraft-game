@@ -141,7 +141,7 @@ func generate_chunk_mesh(chunk_data: Array, chunk_coords: Vector3i) -> ArrayMesh
         mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
         # Assign a material (e.g., a SpatialMaterial with a texture atlas)
         var material = StandardMaterial3D.new()
-        material.albedo_texture = load(get_block_texture_path(block_id)) # Load individual texture for now
+        material.albedo_texture = load("res://assets/textures/dirt.png") # Use a default texture for now. A texture atlas is recommended for performance.
         material.cull_mode = BaseMaterial3D.CULL_BACK
         mesh.surface_set_material(0, material)
 

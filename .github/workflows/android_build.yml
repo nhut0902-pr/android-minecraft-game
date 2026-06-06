@@ -1,0 +1,48 @@
+name: Android APK Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_android:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Java Development Kit
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Download Godot Editor
+      id: download_godot
+      run: |
+        GODOT_VERSION="4.2.1"
+        GODOT_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+        wget -q ${GODOT_URL}
+        unzip -q Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+        mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+        chmod +x godot
+
+    - name: Set up Android Build Tools
+      run: |
+        mkdir -p ~/.android
+        echo "sdk.dir=$ANDROID_HOME" > ~/.android/repositories.cfg
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+    - name: Export Android APK
+      run: |
+        ./godot --headless --export-release "Android" --debug-bsp --verbose
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: android-minecraft-game/build/android/game.apk
