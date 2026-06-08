@@ -40,31 +40,29 @@ jobs:
 
     - name: Set up Android SDK
       run: |
-        # Đảm bảo dùng đúng sdkmanager từ Android Home
         echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
         echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-        
-        # Chấp nhận bản quyền
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses
-        
-        # Cài đặt các công cụ cần thiết
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
     - name: Create Debug Keystore
       run: |
         keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
 
-    - name: Create Build Directory
-      run: mkdir -p build/android
-
     - name: Export Android APK
       run: |
-        # Chạy Godot để xuất APK
-        ./godot --headless --export-release "Android" build/android/game.apk --verbose
+        # Tạo thư mục build và đảm bảo đường dẫn tuyệt đối
+        mkdir -p build/android
+        # Xuất APK (Lưu ý: "Android" phải khớp chính xác với tên trong export_presets.cfg)
+        ./godot --headless --export-release "Android" ./build/android/game.apk --verbose
+
+    - name: List files for debugging
+      run: |
+        ls -R build/
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: android-apk
-        path: build/android/game.apk
+        path: build/android/*.apk
+        if-no-files-found: error
