@@ -20,10 +20,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 34
+        build-tools: 34.0.0
+
     - name: Download Godot Editor
       run: |
         GODOT_VERSION="4.2.1"
-        GODOT_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+        GODOT_URL="https://github.com/godotengine/godot/releases/download/\( {GODOT_VERSION}-stable/Godot_v \){GODOT_VERSION}-stable_linux.x86_64.zip"
         wget -q ${GODOT_URL}
         unzip -q Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
         mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
@@ -32,70 +38,41 @@ jobs:
     - name: Download Godot Export Templates
       run: |
         GODOT_VERSION="4.2.1"
-        wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
-        mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+        wget -q https://github.com/godotengine/godot/releases/download/\( {GODOT_VERSION}-stable/Godot_v \){GODOT_VERSION}-stable_export_templates.tpz
+        mkdir -p \~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
         unzip -q Godot_v${GODOT_VERSION}-stable_export_templates.tpz
-        mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+        mv templates/* \~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
         rm -rf templates Godot_v${GODOT_VERSION}-stable_export_templates.tpz
-
-    - name: Set up Android SDK
-      run: |
-        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
     - name: Create Debug Keystore
       run: |
         keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
 
-    - name: Force Create Export Presets
+    - name: Patch export_presets.cfg with keystore paths
       run: |
-        # Tự tạo file cấu hình export để đảm bảo Godot nhận diện đúng
-        cat <<EOF > export_presets.cfg
-        [preset.0]
-        name="Android"
-        platform="Android"
-        runnable=true
-        custom_features=""
-        export_filter="all_resources"
-        include_filter=""
-        exclude_filter=""
-        export_path="build/android/game.apk"
-        encryption_include_filters=""
-        encryption_exclude_filters=""
-        encrypt_pck=false
-        encrypt_directory=false
-
-        [preset.0.options]
-        custom_template/debug=""
-        custom_template/release=""
-        native_lib_res_spacing/support_32_bit=true
-        native_lib_res_spacing/support_64_bit=true
-        package/unique_name="com.manus.minecraftclone"
-        package/name="Minecraft Clone"
-        package/signed=true
-        keystore/debug="$GITHUB_WORKSPACE/debug.keystore"
-        keystore/debug_user="androiddebugkey"
-        keystore/debug_password="android"
-        keystore/release="$GITHUB_WORKSPACE/debug.keystore"
-        keystore/release_user="androiddebugkey"
-        keystore/release_password="android"
-        version/code=1
-        version/name="1.0"
-        EOF
+        sed -i 's|keystore/debug=""|keystore/debug="'"$GITHUB_WORKSPACE"'/debug.keystore"|' export_presets.cfg
+        sed -i 's|keystore/debug_user=""|keystore/debug_user="androiddebugkey"|' export_presets.cfg
+        sed -i 's|keystore/debug_password=""|keystore/debug_password="android"|' export_presets.cfg
+        sed -i 's|keystore/release=""|keystore/release="'"$GITHUB_WORKSPACE"'/debug.keystore"|' export_presets.cfg
+        sed -i 's|keystore/release_user=""|keystore/release_user="androiddebugkey"|' export_presets.cfg
+        sed -i 's|keystore/release_password=""|keystore/release_password="android"|' export_presets.cfg
+        echo "=== Patched export_presets.cfg ==="
+        cat export_presets.cfg
 
     - name: Export Android APK
       run: |
         mkdir -p build/android
-        # Cấu hình SDK path cho Godot
         ./godot --headless --editor --quit --set-setting "export/android/android_sdk_path" "$ANDROID_HOME"
-        # Thực hiện export
         ./godot --headless --export-debug "Android" build/android/game.apk --verbose
 
-    - name: List files for debugging
+    - name: Verify APK created
       run: |
         ls -la build/android/
-        if [ ! -f build/android/game.apk ]; then echo "APK FILE NOT FOUND!"; exit 1; fi
+        if [ ! -f build/android/game.apk ]; then
+          echo "APK FILE NOT FOUND! Export failed."
+          exit 1
+        fi
+        echo "APK created successfully! Size: $(du -h build/android/game.apk | cut -f1)"
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
