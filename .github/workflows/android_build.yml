@@ -1,0 +1,63 @@
+name: Android APK Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_android:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Java Development Kit
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Download Godot Editor
+      run: |
+        GODOT_VERSION="4.2.1"
+        GODOT_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+        wget -q ${GODOT_URL}
+        unzip -q Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+        mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+        chmod +x godot
+
+    - name: Download Godot Export Templates
+      run: |
+        GODOT_VERSION="4.2.1"
+        wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+        mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+        unzip -q Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+        mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+        rm -rf templates Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+
+    - name: Set up Android Build Tools
+      run: |
+        mkdir -p ~/.android
+        echo "sdk.dir=$ANDROID_HOME" > ~/.android/repositories.cfg
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+    - name: Create Debug Keystore
+      run: |
+        keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
+
+    - name: Create Build Directory
+      run: mkdir -p build/android
+
+    - name: Export Android APK
+      run: |
+        ./godot --headless --export-release "Android" build/android/game.apk --verbose
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: build/android/game.apk
